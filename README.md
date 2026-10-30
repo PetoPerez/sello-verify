@@ -26,7 +26,29 @@ certutil -hashfile sello-verify-windows-amd64.exe SHA256   # Windows
 
 ```
 sello-verify paquete.zip        # o el directorio ya descomprimido
+sello-verify --version
 ```
+
+## Llaves de Sello (desde v1.1.0)
+
+`sello-verify` solo acepta Cierres firmados con las llaves de producción de
+Sello que trae embebidas; un paquete firmado con cualquier otra llave falla, y
+un paquete sin Cierres también. Las llaves vigentes están en
+[llaves-produccion.json](llaves-produccion.json):
+
+| key_id | Huella SHA-256 de la llave pública |
+|---|---|
+| `prod-1` | `2882 03ed 1e74 2c5f 72c3 7aa4 9cb2 c3c6 09d7 8745 d9ce 6732 50a9 af55 f52e 8cfc` |
+
+La misma huella aparece en el `LEEME.txt` y en el PDF de cada paquete, y en el
+correo diario del Cierre que recibe la empresa. Si no coincide, no confíe en el
+paquete.
+
+Para paquetes de pruebas o de staging existe `--keys archivo.json`; el
+resultado avisa que se usaron llaves externas y no las oficiales.
+
+v1.1.0 también verifica el paquete acotado de un solo Trabajador
+(`sello-inspection-v2`) y el formato canónico v2 de los registros.
 
 Imprime Eventos revisados, Cierres válidos, sellos de tiempo válidos y cada
 falla con su ubicación. Código de salida: 0 verifica, 1 hay fallas, 2 uso
