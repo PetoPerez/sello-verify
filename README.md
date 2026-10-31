@@ -14,7 +14,17 @@ En [Releases](../../releases/latest):
 | macOS (Apple Silicon) | `sello-verify-darwin-arm64` |
 | Linux (x86-64) | `sello-verify-linux-amd64` |
 
-Compruebe la huella antes de usarlo; debe coincidir con `SHA256SUMS`:
+Desde v1.1.1, `SHA256SUMS` viene firmado (`SHA256SUMS.sig`) con la llave de
+release de Sello, publicada en [allowed_signers](allowed_signers) (huella
+`SHA256:FCcHrvexzpgDNBx2l4kWOpLTWTWZfg4XMsqrXLQ0yOA`, distinta de la llave que
+firma los Cierres). Compruebe primero la firma (OpenSSH 8.2 o posterior, incluido
+en Linux, macOS y Windows 10+):
+
+```
+ssh-keygen -Y verify -f allowed_signers -I sello-release -n sello-verify -s SHA256SUMS.sig < SHA256SUMS
+```
+
+Luego la huella del binario; debe coincidir con `SHA256SUMS`:
 
 ```
 sha256sum -c SHA256SUMS --ignore-missing          # Linux
@@ -34,7 +44,8 @@ sello-verify --version
 `sello-verify` solo acepta Cierres firmados con las llaves de producción de
 Sello que trae embebidas; un paquete firmado con cualquier otra llave falla, y
 un paquete sin Cierres también. Las llaves vigentes están en
-[llaves-produccion.json](llaves-produccion.json):
+[llaves-produccion.json](llaves-produccion.json), firmado con la misma llave
+de release en `llaves-produccion.json.sig`:
 
 | key_id | Huella SHA-256 de la llave pública |
 |---|---|
@@ -47,6 +58,7 @@ paquete.
 Para paquetes de pruebas o de staging existe `--keys archivo.json`; el
 resultado avisa que se usaron llaves externas y no las oficiales.
 
+v1.1.1 no sigue enlaces simbólicos que salgan del directorio del paquete.
 v1.1.0 también verifica el paquete acotado de un solo Trabajador
 (`sello-inspection-v2`) y el formato canónico v2 de los registros.
 

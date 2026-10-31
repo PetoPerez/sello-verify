@@ -4,7 +4,7 @@ Este documento basta para comprobar un Paquete de inspección de Sello sin
 usar Sello: con `sello-verify` o con un verificador propio en cualquier
 lenguaje. Formatos del paquete: `sello-inspection-v1` (completo de la Empresa)
 y `sello-inspection-v2` (acotado a un Trabajador). Versión del verificador:
-`v1.1.0`.
+`v1.1.1`.
 
 ## Uso de sello-verify
 
@@ -228,8 +228,8 @@ firmado, para dejar una historia auditable y poder cotejar que el ancla
 embebida es la esperada.
 
 - **Formato:** el mismo `sello-seal-keys-anchor-v1`, publicado como
-  `llaves-sello.json`.
-- **Firma:** Ed25519 **desprendida** en `llaves-sello.json.minisig`, calculada
+  `llaves-produccion.json`.
+- **Firma:** firma SSH (`ssh-keygen -Y sign`, namespace `sello-verify`) en `llaves-produccion.json.sig`, calculada
   con la **llave de release** de Sello (distinta de la llave que firma los
   Cierres) sobre los bytes exactos del JSON canónico del ancla. `SHA256SUMS` de
   los binarios del release se firma con esa misma llave de release.
@@ -237,17 +237,35 @@ embebida es la esperada.
 Procedimiento:
 
 1. **Operador (producción):** `api seal-keys export --entorno produccion --out
-   llaves-sello.json` imprime las llaves de `seal_keys` en el formato del ancla
+   llaves-produccion.json` imprime las llaves de `seal_keys` en el formato del ancla
    (con `active_from`/`retired_at`; `revoked_at` se agrega a mano si una llave
    se comprometió) y lo entrega al mantenedor del verificador.
 2. **Mantenedor:** revisa el archivo, lo firma con la llave de release de Sello
-   y publica `llaves-sello.json` y `llaves-sello.json.minisig` en la raíz del
+   y publica `llaves-produccion.json` y `llaves-produccion.json.sig` en la raíz del
    repositorio público.
 3. **Mantenedor del binario:** copia el contenido a
    `internal/verify/llaves-ancla.json`, sube la versión de `sello-verify` y
    recompila con `make verify-dist`.
-4. **Cualquiera:** descarga el binario, comprueba su `SHA256SUMS` y coteja la
-   huella de la llave de un paquete contra el `llaves-sello.json` firmado.
+4. **Cualquiera:** descarga el binario, comprueba la firma y el `SHA256SUMS` y
+   coteja la huella de la llave de un paquete contra el ancla firmada.
+
+### Firma del release
+
+La llave de release es Ed25519 en formato SSH (`ssh-keygen`, sin herramientas
+extra), distinta de la que firma los Cierres. Su llave pública está en
+`allowed_signers` del repositorio público; huella
+`SHA256:FCcHrvexzpgDNBx2l4kWOpLTWTWZfg4XMsqrXLQ0yOA`. Se firman `SHA256SUMS`
+(en cada release) y `llaves-produccion.json` (en la raíz del repositorio):
+
+```
+ssh-keygen -Y verify -f allowed_signers -I sello-release -n sello-verify \
+  -s SHA256SUMS.sig < SHA256SUMS && sha256sum -c SHA256SUMS
+ssh-keygen -Y verify -f allowed_signers -I sello-release -n sello-verify \
+  -s llaves-produccion.json.sig < llaves-produccion.json
+```
+
+El mantenedor firma con `make verify-sign` (llave en
+`~/.config/sello/release-key`, o `RELEASE_KEY=...`).
 
 Hoy el ancla embebida (`internal/verify/llaves-ancla.json`) está **vacía** —no
 se ha generado todavía la llave de producción de Sello—: hasta que el Operador
